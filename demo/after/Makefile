@@ -23,7 +23,7 @@ coverage: ## Genera report HTML di code coverage
 			--collect:'XPlat Code Coverage' \
 			--results-directory /app/reports/coverage/raw \
 			--verbosity normal && \
-		reportgenerator \
+		dotnet reportgenerator \
 			-reports:/app/reports/coverage/raw/*/coverage.cobertura.xml \
 			-targetdir:/app/reports/coverage/html \
 			-reporttypes:Html && \

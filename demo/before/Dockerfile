@@ -1,10 +1,10 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0
-
-RUN dotnet tool install -g dotnet-stryker \
- && dotnet tool install -g dotnet-reportgenerator-globaltool
-ENV PATH="$PATH:/root/.dotnet/tools"
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 WORKDIR /app
+
+# Stryker.NET 5.0.0 e ReportGenerator, fissati nel tool manifest locale
+COPY .config/dotnet-tools.json .config/
+RUN dotnet tool restore
 
 COPY MutationTestingDemo.sln ./
 COPY src/MutationTestingDemo/MutationTestingDemo.csproj src/MutationTestingDemo/
