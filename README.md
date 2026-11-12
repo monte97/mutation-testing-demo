@@ -1,39 +1,61 @@
-# Come il mutation testing mi ha fatto capire che la suite stava mentendo
+# mutation-testing-demo
 
-Slide e demo del talk su **mutation testing** — Working Software Conference 2026.
-Speaker: Francesco Montelli · [montelli.dev](https://montelli.dev)
+A small .NET 10 demo for a talk about what a high mutation score still misses.
+It is a simplified rebuild of a real problem, not the real system: a wrong
+aggregation that no test could see, because every test used a single value.
+In the demo that bug is a `Max` where a `Sum` should be.
 
-## Cosa trovi qui
+Speaker: Francesco Montelli ([montelli.dev](https://montelli.dev))
 
-- **`slides.pdf`** — le slide del talk.
-- **`demo/`** — il progetto .NET della demo, in due stati:
-  - `demo/before/` — suite di test debole: **10 test, coverage ~93%, mutation score 65%**.
-  - `demo/after/` — suite migliorata coi due fix guidati dal report: **22 test, mutation score 92%**.
-  - `demo/saved-reports/` — i report HTML pre-generati (coverage + Stryker before/after), apribili **senza far girare nulla**.
+## What is here
 
-## La tesi in una riga
+- `demo/before/`: an order-processing service with a weak suite. 10 tests, all green.
+- `demo/after/`: the same service with 22 tests, after two fixes guided by the mutation report.
+- `demo/saved-reports/`: pre-generated reports, readable without running anything.
+- `slides.pdf`: slides from an earlier, Italian version of the talk (Working Software 2026).
 
-La coverage ti dice **quanto codice esegui**. Il mutation score ti dice **quanto bene lo verifichi**.
+## Numbers
 
-## Provare la demo
+Measured on .NET 10.0.301 with Stryker.NET 5.0.0 (Standard level, mutating `**/*Service.cs`):
 
-Serve Docker. Da `demo/before/` (o `demo/after/`):
+| | Tests | Line coverage | Branch coverage | Mutation score | Killed | Survived | No coverage |
+|---|---|---|---|---|---|---|---|
+| `before` | 10 | 92.9% (66/71) | 80% (16/20) | 65.0% | 26 | 12 | 2 |
+| `after` | 22 | not measured | not measured | 92.5% | 37 | 3 | 0 |
+
+The score counts killed mutants over killed, survived and not covered ones
+(40 valid mutants in both cases). Compile errors and ignored mutants are left out.
+All numbers come from this demo.
+
+## Run it
+
+You need Docker. From `demo/before/` or `demo/after/`:
 
 ```bash
-make build      # build immagine Docker
-make test       # i test (verdi)
-make stryker    # mutation testing con Stryker.NET -> mutation score
+make build      # build the image (.NET 10 SDK, Stryker.NET 5.0.0)
+make test       # run the tests
+make stryker    # mutation testing, report in reports/
+make coverage   # line and branch coverage, HTML report in reports/coverage/html
 ```
 
-Oppure apri direttamente i report già generati in `demo/saved-reports/` nel browser.
-
-## Provare Stryker sul tuo codice
+Stryker.NET and ReportGenerator are pinned in a local tool manifest
+(`.config/dotnet-tools.json`), so nothing is installed globally. Without Docker,
+with the .NET 10 SDK installed:
 
 ```bash
-dotnet tool install -g dotnet-stryker
-dotnet stryker
+cd demo/before
+dotnet tool restore
+cd tests/MutationTestingDemo.Tests
+dotnet stryker -f ../../stryker-config.json
 ```
 
-## Contatti
+## The three holes in the `before` suite
 
-[montelli.dev](https://montelli.dev) · [github.com/monte97](https://github.com/monte97)
+- `OrderService.cs:26`: `Sum()` to `Max()` survives, because each test has one item. `* Quantity` to `/ Quantity` survives too, because the quantity is always 1.
+- `DiscountService.cs`: the boundary `>= 3 years` to `> 3 years` survives, because the test customer has 5 years.
+- `OrderServiceTests.cs`: the order status is never asserted.
+
+## License
+
+The code is licensed under [Apache-2.0](LICENSE). The talk content (`slides.pdf`
+and this README) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
